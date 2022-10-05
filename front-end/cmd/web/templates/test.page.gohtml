@@ -1,0 +1,220 @@
+{{template "base" .}}
+
+{{define "content" }}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1 class="mt-5">Test microservices</h1>
+                <hr>
+
+                <a id="brokerBtn" class="btn btn-outline-secondary" href="javascript:void(0);">Test Broker</a>
+                <a id="authBrokerBtn" class="btn btn-outline-secondary" href="javascript:void(0);">Test
+                    Authentication</a>
+                <a id="logBtn" class="btn btn-outline-secondary" href="javascript:void(0);">Test Logger srv</a>
+                <a id="mailBtn" class="btn btn-outline-secondary" href="javascript:void(0);">Test Mailer srv</a>
+                <a id="grpcBtn" class="btn btn-outline-secondary" href="javascript:void(0);">Test Grpc srv</a>
+
+                <div id="output" class="mt-5" style="outline: 1px solid silver; padding: 2em;">
+                    <span class="text-muted">Output shows here...</span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <h4 class="mt-5">Sent</h4>
+                <div class="mt-1" style="outline: 1px solid silver; padding: 2em;">
+                    <pre id="payload"><span class="text-muted">Nothing sent yet...</span></pre>
+                </div>
+            </div>
+            <div class="col">
+                <h4 class="mt-5">Received</h4>
+                <div class="mt-1" style="outline: 1px solid silver; padding: 2em;">
+                    <pre id="received"><span class="text-muted">Nothing received yet...</span></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+{{end}}
+
+{{define "js"}}
+    <script>
+        let brokerBtn = document.getElementById("brokerBtn")
+        let authBroker = document.getElementById("authBrokerBtn")
+        let grpcBroker = document.getElementById("grpcBtn")
+        let logSrv = document.getElementById("logBtn")
+        let mailSrv = document.getElementById("mailBtn")
+        let output = document.getElementById("output")
+        let sent = document.getElementById("payload")
+        let received = document.getElementById("received")
+
+        logSrv.addEventListener("click", function () {
+            const payload = {
+                action:"log",
+                log: {
+                    name:"event",
+                    data:"log data"
+                }
+            }
+            const headers = new Headers()
+            headers.append("Content-Type", "application/json")
+
+            const body = {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: headers
+            }
+            sent.innerHTML = JSON.stringify(payload)
+            fetch({{print .BrokerURL "/handle"}}, body).
+            then((res) => res.json()).
+            then((value) => {
+                sent.innerHTML = "empty post request"
+                received.innerHTML = JSON.stringify(value)
+
+                if (value.error){
+                    output.innerHTML += `<br><strong> Error:  <strong>` + value.message
+                }else {
+                    output.innerHTML += `<br><strong> Response from Logger Srv <strong>`
+                }
+            }).
+            catch((reason) => {
+                console.log(reason)
+                output.innerHTML += `<br><strong> Error:  <strong>` + reason
+            })
+
+
+        })
+        grpcBroker.addEventListener("click", function () {
+            const payload = {
+                action:"log",
+                log: {
+                    name:"event",
+                    data:"log data with grpc"
+                }
+            }
+            const headers = new Headers()
+            headers.append("Content-Type", "application/json")
+
+            const body = {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: headers
+            }
+            sent.innerHTML = JSON.stringify(payload)
+            fetch({{print .BrokerURL "/handle/grpc"}}, body).
+            then((res) => res.json()).
+            then((value) => {
+                sent.innerHTML = "empty post request"
+                received.innerHTML = JSON.stringify(value)
+
+                if (value.error){
+                    output.innerHTML += `<br><strong> Error:  <strong>` + value.message
+                }else {
+                    output.innerHTML += `<br><strong> Response from Logger Srv <strong>`
+                }
+            }).
+            catch((reason) => {
+                console.log(reason)
+                output.innerHTML += `<br><strong> Error:  <strong>` + reason
+            })
+
+
+        })
+        
+        brokerBtn.addEventListener("click", function () {
+            const body = {
+                method: 'POST',
+            }
+            fetch({{.BrokerURL}}, body).
+            then((res) => res.json()).
+            then((value) => {
+                sent.innerHTML = "empty post request"
+                received.innerHTML = JSON.stringify(value)
+
+                if (value.error){
+                    console.log(value.message)
+                }else {
+                    output.innerHTML += `<br><strong> Response from Broker Srv <strong>`
+                }
+            }).
+            catch((reason) => {
+                console.log(reason)
+                output.innerHTML += `<br><strong> Error:  <strong>` + reason
+            })
+
+        })
+
+        authBroker.addEventListener("click", function () {
+            const payload = {
+                action:"auth",
+                auth: {
+                    email:"admin@example.com",
+                    password:"verysecret"
+                }
+            }
+            const headers = new Headers()
+            headers.append("Content-Type", "application/json")
+            const body = {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                // headers: headers
+            }
+            sent.innerHTML = JSON.stringify(payload)
+            fetch({{print .BrokerURL "/handle"}}, body).
+            then((res) => res.json()).
+            then((value) => {
+                sent.innerHTML = "empty post request"
+                received.innerHTML = JSON.stringify(value)
+
+                if (value.error){
+                    output.innerHTML += `<br><strong> Error:  <strong>` + value.message
+                }else {
+                    output.innerHTML += `<br><strong> Response from Broker Srv <strong>`
+                }
+            }).
+            catch((reason) => {
+                console.log(reason)
+                output.innerHTML += `<br><strong> Error:  <strong>` + reason
+            })
+
+        })
+
+        mailSrv.addEventListener("click", function () {
+            const payload = {
+                action:"mail",
+                mail: {
+                    from:"femi@example.com",
+                    to:"you@examplecom",
+                    subject:"Test Email",
+                    message:"hello there"
+                }
+            }
+            const headers = new Headers()
+            headers.append("Content-Type", "application/json")
+            const body = {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: headers
+            }
+            sent.innerHTML = JSON.stringify(payload)
+            fetch({{print .BrokerURL "/handle"}}, body).
+            then((res) => res.json()).
+            then((value) => {
+                console.log({{.BrokerURL}})
+                sent.innerHTML = "empty post request"
+                received.innerHTML = JSON.stringify(value)
+
+                if (value.error){
+                    output.innerHTML += `<br><strong> Error:  <strong>` + value.message
+                }else {
+                    output.innerHTML += `<br><strong> Response from Broker Srv <strong>`
+                }
+            }).
+            catch((reason) => {
+                console.log(reason)
+                output.innerHTML += `<br><strong> Error:  <strong>` + reason
+            })
+
+        })
+
+    </script>
+{{end}}

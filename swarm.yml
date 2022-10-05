@@ -1,0 +1,109 @@
+version: '3'
+
+services:
+
+  caddy:
+    image: babafemi99/micro-caddy:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+  broker-service:
+    image: babafemi99/broker-srv:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  front-end:
+    image: babafemi99/front-app:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      BROKER_URL: "http://backend"
+
+
+  listener-service:
+    image: babafemi99/listner-service:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  authentication-service:
+    image: babafemi99/auth-service
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DSN: "postgres://postgres:password@postgres:5432/users"
+  logger-service:
+    image: babafemi99/logger-service:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  mailing-service:
+    image: babafemi99/mailing-service:1.0.0
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      MAIL_DOMAIN: localhost
+      MAIL_HOST: mailhog
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      MAIL_ENCRYPTION: none
+      MAIL_PORT: 1025
+      FROM_NAME: Oreoluwa Babafemi
+      FROM_ADDRESS: oreoluwababa@baba.com
+
+  rabbitmq:
+    image: rabbitmq:3.9-management-alpine
+    deploy:
+      mode: global
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8025:8025"
+    deploy:
+      mode: global
+
+  mongo:
+    image: mongo:4.2.23-rc0-bionic
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: logs
+      MONGO_INITDB_ROOT_USERNAME: admindb
+      MONGO_INITDB_ROOT_PASSWORD: secret
+
+    volumes:
+      - ./db-data/mongo:/data/db
+
+  postgres:
+    image: postgres:14.5-alpine
+    ports:
+      - "5432:5432"
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=users
+
+    volumes:
+      - ./db-data/postgres/:/var/lib/postgresql/data
+
+volumes:
+    caddy_data:
+      external: true
+    caddy_config:
